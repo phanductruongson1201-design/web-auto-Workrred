@@ -1019,9 +1019,29 @@ Trả về JSON (chỉ JSON, không thêm bất kỳ text nào khác):
         messages: [{ role: 'user', content: prompt }]
       })
     });
-    const data = await resp.json();
+
+    const rawText = await resp.text();
+
+    if (!resp.ok) {
+      let errMsg = `HTTP ${resp.status}`;
+      try {
+        const errJson = JSON.parse(rawText);
+        if (errJson.error?.message) errMsg = errJson.error.message;
+        else if (errJson.message) errMsg = errJson.message;
+      } catch(e) {}
+      if (resp.status === 401) errMsg = 'API Key không hợp lệ hoặc hết hạn. Vui lòng kiểm tra lại tại console.anthropic.com';
+      if (resp.status === 429) errMsg = 'Vượt giới hạn request. Vui lòng đợi 1 phút rồi thử lại.';
+      if (resp.status === 400) errMsg = 'Yêu cầu không hợp lệ: ' + rawText.slice(0, 200);
+      throw new Error(errMsg);
+    }
+
+    const data = JSON.parse(rawText);
     const raw = data.content?.[0]?.text || '';
-    const clean = raw.replace(/^```json\s*/,'').replace(/\s*```$/,'').trim();
+    if (!raw) throw new Error('AI không trả về nội dung. Thử lại lần nữa.');
+    const jsonStart = raw.indexOf('{');
+    const jsonEnd = raw.lastIndexOf('}');
+    if (jsonStart === -1 || jsonEnd === -1) throw new Error('AI trả về nội dung không đúng định dạng. Thử nhấn Tạo lại.');
+    const clean = raw.slice(jsonStart, jsonEnd + 1);
     const art = JSON.parse(clean);
 
     currentArticle = {
