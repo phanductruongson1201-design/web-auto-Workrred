@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AutoPost AI — Viết & Đăng Bài WordPress Tự Động</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161e;
+    --bg3: #1a1e28;
+    --bg4: #222637;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --accent: #22d97a;
+    --accent2: #19b362;
+    --accent-dim: rgba(34,217,122,0.12);
+    --accent-dim2: rgba(34,217,122,0.06);
+    --text: #e8eaf0;
+    --text2: #8b90a0;
+    --text3: #5a5f70;
+    --blue: #4a9eff;
+    --blue-dim: rgba(74,158,255,0.12);
+    --red: #ff5b5b;
+    --red-dim: rgba(255,91,91,0.12);
+    --amber: #ffb83f;
+    --amber-dim: rgba(255,184,63,0.1);
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Be Vietnam Pro', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(34,217,122,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34,217,122,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HEADER */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(13,15,20,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .logo span { color: var(--accent); }
+  .header-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(34,217,122,0.25);
+    border-radius: 999px;
+    font-weight: 500;
+  }
+
+  /* LAYOUT */
+  .layout {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    padding: 2rem 1.5rem;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+    background: rgba(19,22,30,0.6);
+  }
+  .sidebar-title {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 1rem;
+  }
+  .step-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 2rem;
+  }
+  .step-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+  .step-item:hover { background: var(--bg3); }
+  .step-item.active {
+    background: var(--accent-dim);
+    border-color: rgba(34,217,122,0.2);
+  }
+  .step-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    font-size: 11px;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text2);
+    flex-shrink: 0;
+  }
+  .step-item.active .step-num {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0d0f14;
+  }
+  .step-item.done .step-num {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .step-label { font-size: 13px; font-weight: 500; color: var(--text2); }
+  .step-item.active .step-label { color: var(--accent); }
+  .step-item.done .step-label { color: var(--text); }
+
+  .sidebar-stats {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+  }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .stat-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .stat-label { font-size: 12px; color: var(--text2); }
+  .stat-val { font-size: 13px; font-weight: 600; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+
+  /* MAIN */
+  .main { padding: 2rem; max-width: 780px; }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    animation: fadeUp 0.3s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .card:nth-child(1) { animation-delay: 0s; }
+  .card:nth-child(2) { animation-delay: 0.06s; }
+  .card:nth-child(3) { animation-delay: 0.12s; }
+  .card:nth-child(4) { animation-delay: 0.18s; }
+
+  .card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-icon {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+  }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .card-subtitle { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .card-body { padding: 1.25rem; }
+
+  /* FORM ELEMENTS */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+  }
+  .field label .hint {
+    font-weight: 400;
+    color: var(--text3);
+    margin-left: 4px;
+  }
+  input[type=text], input[type=password], input[type=url], textarea, select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(34,217,122,0.1);
+  }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+  select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a5f70' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* KEYWORD TAGS */
+  .kw-wrapper {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 8px;
+    min-height: 48px;
+    cursor: text;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .kw-wrapper:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(34,217,122,0.1);
+  }
+  .kw-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(34,217,122,0.2);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 3px 8px 3px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    animation: popIn 0.15s ease;
+  }
+  @keyframes popIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .kw-tag button {
+    background: none; border: none; cursor: pointer;
+    color: var(--accent); font-size: 15px; line-height: 1; padding: 0;
+    opacity: 0.6; transition: opacity 0.1s;
+  }
+  .kw-tag button:hover { opacity: 1; }
+  .kw-input-inner {
+    flex: 1;
+    min-width: 140px;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    color: var(--text);
+    font-family: 'Be Vietnam Pro', sans-serif;
+    padding: 2px 4px;
+  }
+  .kw-input-inner::placeholder { color: var(--text3); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text);
+    font-family: 'Be Vietnam Pro', sans-serif;
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--bg4); border-color: var(--border2); }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .btn-accent {
+    background: var(--accent);
+    color: #0a0c10;
+    border-color: var(--accent);
+  }
+  .btn-accent:hover { background: var(--accent2); border-color: var(--accent2); }
+  .btn-blue { background: var(--blue-dim); color: var(--blue); border-color: rgba(74,158,255,0.25); }
+  .btn-blue:hover { background: rgba(74,158,255,0.18); }
+  .btn-outline { background: transparent; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-lg { padding: 12px 24px; font-size: 14px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 1rem; }
+
+  /* SPINNER */
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(10,12,16,0.3);
+    border-top-color: #0a0c10;
+    border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+    flex-shrink: 0;
+  }
+  .spinner-white { border-color: rgba(255,255,255,0.2); border-top-color: white; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ALERTS */
+  .alert {
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .alert-info { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(74,158,255,0.2); }
+  .alert-success { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(34,217,122,0.2); }
+  .alert-error { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,91,91,0.2); }
+  .alert-warning { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,184,63,0.2); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg3);
+    border-radius: var(--radius);
+    padding: 3px;
+    margin-bottom: 14px;
+    width: fit-content;
+  }
+  .tab-btn {
+    padding: 6px 14px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--text2);
+    font-family: 'Be Vietnam Pro', sans-serif;
+    transition: all 0.15s;
+  }
+  .tab-btn.active { background: var(--bg2); color: var(--text); border: 1px solid var(--border2); }
+
+  /* PREVIEW */
+  .preview-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    max-height: 360px;
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text);
+  }
+  .preview-box h1, .preview-box h2 { color: var(--text); font-size: 15px; font-weight: 600; margin: 1em 0 0.4em; }
+  .preview-box h3 { color: var(--text); font-size: 14px; font-weight: 500; margin: 0.8em 0 0.3em; }
+  .preview-box p { margin-bottom: 0.7em; color: var(--text2); }
+  .preview-box strong { color: var(--text); }
+  .preview-box ul, .preview-box ol { padding-left: 1.4em; margin-bottom: 0.7em; color: var(--text2); }
+  .preview-box li { margin-bottom: 3px; }
+  .preview-box::-webkit-scrollbar { width: 5px; }
+  .preview-box::-webkit-scrollbar-track { background: transparent; }
+  .preview-box::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* CODE box */
+  .code-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: var(--accent);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* META DISPLAY */
+  .meta-field {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .meta-field:last-child { border-bottom: none; }
+  .meta-key { font-size: 11px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .meta-val { font-size: 13px; color: var(--text); line-height: 1.5; }
+
+  /* HISTORY */
+  .history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-item:last-child { border-bottom: none; }
+  .hi-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px; }
+  .hi-meta { font-size: 11px; color: var(--text3); }
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .badge-green { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(34,217,122,0.2); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,184,63,0.15); }
+  .badge-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(74,158,255,0.2); }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 12px;
+    color: var(--text3);
+    border-top: 1px solid var(--border);
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* GLOW pulse on generate btn */
+  @keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34,217,122,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(34,217,122,0); }
+  }
+  .btn-glow { animation: glowPulse 2s ease infinite; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">✦</div>
+    Auto<span>Post</span> AI
+  </div>
+  <div style="display:flex; align-items:center; gap:10px;">
+    <div class="header-badge">Claude AI</div>
+    <div id="hdr-count" style="font-size:12px; color:var(--text2); display:none;">
+      <span style="color:var(--accent); font-weight:600;" id="hdr-num">0</span> bài đã đăng
+    </div>
+  </div>
+</header>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Các bước thực hiện</div>
+    <nav class="step-nav">
+      <div class="step-item active" id="nav-1" onclick="scrollTo(0,0)">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-label">Cấu hình WordPress</div>
+        </div>
+      </div>
+      <div class="step-item" id="nav-2">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-label">Cài đặt bài viết</div>
+        </div>
+      </div>
+      <div class="step-item" id="nav-3">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-label">Nhập từ khóa</div>
+        </div>
+      </div>
+      <div class="step-item" id="nav-4">
+        <div class="step-num">4</div>
+        <div>
+          <div class="step-label">Xem trước & đăng</div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-title">Thống kê phiên</div>
+    <div class="sidebar-stats">
+      <div class="stat-row">
+        <span class="stat-label">Bài đã tạo</span>
+        <span class="stat-val" id="stat-gen">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Đã xuất bản</span>
+        <span class="stat-val" id="stat-pub">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Lưu nháp</span>
+        <span class="stat-val" id="stat-draft">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Từ khóa</span>
+        <span class="stat-val" id="stat-kw">0</span>
+      </div>
+    </div>
+
+    <div style="margin-top:1.5rem; padding:1rem; background:var(--accent-dim2); border:1px solid rgba(34,217,122,0.1); border-radius:var(--radius); font-size:12px; color:var(--text2); line-height:1.6;">
+      <div style="color:var(--accent); font-weight:600; margin-bottom:6px;">Lấy Application Password</div>
+      WP Admin → Users → Profile → cuộn xuống <em>Application Passwords</em> → nhập tên → Generate
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- CARD 1: WordPress Config -->
+    <div class="card" id="card-wp">
+      <div class="card-header">
+        <div class="card-icon">🔗</div>
+        <div>
+          <div class="card-title">Kết nối WordPress</div>
+          <div class="card-subtitle">Nhập thông tin website và xác thực</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid-2">
+          <div class="field">
+            <label>URL Website</label>
+            <input type="url" id="wp-url" placeholder="https://daotaomc.net" value="https://daotaomc.net" />
+          </div>
+          <div class="field">
+            <label>Username</label>
+            <input type="text" id="wp-user" placeholder="admin" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Application Password <span class="hint">(không phải mật khẩu đăng nhập)</span></label>
+          <input type="password" id="wp-pass" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx" />
+        </div>
+        <div class="actions" style="margin-top:0.75rem;">
+          <button class="btn btn-blue btn-sm" onclick="testConnection()">
+            <span id="test-icon">⚡</span> Kiểm tra kết nối
+          </button>
+        </div>
+        <div id="wp-status"></div>
+      </div>
+    </div>
+
+    <!-- CARD 2: Article Settings -->
+    <div class="card" id="card-settings">
+      <div class="card-header">
+        <div class="card-icon">⚙️</div>
+        <div>
+          <div class="card-title">Cài đặt bài viết</div>
+          <div class="card-subtitle">Tuỳ chỉnh nội dung AI sẽ tạo ra</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid-3">
+          <div class="field">
+            <label>Giọng văn</label>
+            <select id="tone">
+              <option value="chuyên nghiệp, thân thiện, dễ hiểu">Chuyên nghiệp</option>
+              <option value="vui tươi, năng động, gần gũi">Vui tươi & năng động</option>
+              <option value="truyền cảm hứng, motivational, đầy nhiệt huyết">Truyền cảm hứng</option>
+              <option value="học thuật, phân tích, sâu sắc">Học thuật</option>
+              <option value="kể chuyện, storytelling, cuốn hút">Kể chuyện (Story)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Độ dài bài viết</label>
+            <select id="length">
+              <option value="700">Ngắn (~700 từ)</option>
+              <option value="1200" selected>Trung bình (~1200 từ)</option>
+              <option value="2000">Dài (~2000 từ)</option>
+              <option value="3000">Rất dài (~3000 từ)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Trạng thái đăng</label>
+            <select id="post-status">
+              <option value="publish">Xuất bản ngay</option>
+              <option value="draft">Lưu nháp</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Danh mục (Category ID) <span class="hint">tuỳ chọn</span></label>
+            <input type="text" id="category" placeholder="VD: 5, 12" />
+          </div>
+          <div class="field">
+            <label>Tags <span class="hint">tuỳ chọn</span></label>
+            <input type="text" id="tags" placeholder="VD: 15, 23" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Yêu cầu bổ sung cho AI <span class="hint">tuỳ chọn</span></label>
+          <input type="text" id="extra" placeholder="VD: Thêm bảng so sánh, thêm FAQ cuối bài, viết CTA kêu gọi đăng ký..." />
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 3: Keywords -->
+    <div class="card" id="card-kw">
+      <div class="card-header">
+        <div class="card-icon">🔑</div>
+        <div>
+          <div class="card-title">Từ khóa SEO</div>
+          <div class="card-subtitle">Nhập từ khóa → nhấn Enter hoặc dấu phẩy để thêm</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="kw-wrapper" id="kw-wrapper" onclick="document.getElementById('kw-input').focus()">
+            <input class="kw-input-inner" id="kw-input" placeholder="Nhập từ khóa và nhấn Enter..." />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-accent btn-lg btn-glow" id="btn-generate" onclick="generateArticle()">
+            ✦ Tạo bài viết với AI
+          </button>
+          <button class="btn btn-outline" onclick="clearKeywords()">Xoá từ khóa</button>
+        </div>
+        <div id="gen-status"></div>
+        <div id="gen-progress" style="display:none;">
+          <div style="font-size:12px; color:var(--text2); margin-top:10px;" id="gen-step-text">Đang kết nối Claude AI...</div>
+          <div class="progress-bar"><div class="progress-fill" id="gen-progress-fill" style="width:10%;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 4: Preview & Publish (hidden until article generated) -->
+    <div class="card" id="card-preview" style="display:none;">
+      <div class="card-header">
+        <div class="card-icon">📝</div>
+        <div>
+          <div class="card-title">Xem trước bài viết</div>
+          <div class="card-subtitle" id="preview-kw-label">—</div>
+        </div>
+        <div style="margin-left:auto; display:flex; gap:6px; align-items:center;">
+          <span class="badge badge-blue" id="word-count">0 từ</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('preview')">Nội dung</button>
+          <button class="tab-btn" onclick="switchTab('html')">HTML</button>
+          <button class="tab-btn" onclick="switchTab('meta')">Meta SEO</button>
+        </div>
+        <div id="tab-preview">
+          <div class="preview-box" id="article-preview"></div>
+        </div>
+        <div id="tab-html" style="display:none;">
+          <div class="code-box" id="article-html"></div>
+        </div>
+        <div id="tab-meta" style="display:none;">
+          <div id="meta-content"></div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-accent" id="btn-publish" onclick="publishArticle()">
+            🚀 Đăng lên WordPress
+          </button>
+          <button class="btn" onclick="generateArticle()">↺ Tạo lại</button>
+          <button class="btn btn-sm btn-outline" onclick="copyContent()">📋 Copy HTML</button>
+        </div>
+        <div id="publish-status"></div>
+
+        <!-- LINK CARD — hiện sau khi đăng thành công -->
+        <div id="link-card" style="display:none; margin-top:14px; background:var(--accent-dim2); border:1px solid rgba(34,217,122,0.25); border-radius:var(--radius-lg); padding:1.25rem; animation: fadeUp 0.3s ease;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <span style="font-size:18px;">🎉</span>
+            <span style="font-size:14px; font-weight:700; color:var(--accent);">Đăng bài thành công!</span>
+            <span class="badge badge-green" id="link-status-badge">Xuất bản</span>
+          </div>
+          <div style="font-size:12px; color:var(--text2); margin-bottom:8px;">Link bài viết của bạn:</div>
+          <div style="display:flex; align-items:center; gap:8px; background:var(--bg); border:1px solid var(--border2); border-radius:var(--radius); padding:10px 14px;">
+            <span style="font-size:14px;">🔗</span>
+            <a id="post-link-display" href="#" target="_blank"
+               style="flex:1; font-size:13px; font-weight:600; color:var(--accent); text-decoration:none; word-break:break-all; font-family:'JetBrains Mono',monospace;">
+              —
+            </a>
+            <button onclick="copyLink()" id="copy-link-btn"
+              style="flex-shrink:0; padding:5px 12px; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid rgba(34,217,122,0.3); background:var(--accent-dim); color:var(--accent); font-family:'Be Vietnam Pro',sans-serif; transition:all 0.15s;">
+              Copy link
+            </button>
+          </div>
+          <div style="margin-top:10px; display:flex; gap:8px;">
+            <a id="open-link-btn" href="#" target="_blank" class="btn btn-accent btn-sm">
+              Mở bài viết →
+            </a>
+            <a id="wp-edit-btn" href="#" target="_blank" class="btn btn-sm">
+              Sửa trong WP
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 5: History -->
+    <div class="card" id="card-history" style="display:none;">
+      <div class="card-header">
+        <div class="card-icon">📋</div>
+        <div>
+          <div class="card-title">Lịch sử đăng bài</div>
+          <div class="card-subtitle">Phiên làm việc hiện tại</div>
+        </div>
+        <div style="margin-left:auto;">
+          <span class="badge badge-green" id="history-count">0</span>
+        </div>
+      </div>
+      <div class="card-body" id="history-list"></div>
+    </div>
+
+    <div class="footer">
+      AutoPost AI · Powered by Claude Sonnet · WordPress REST API
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let keywords = [];
+let currentArticle = {};
+let historyItems = [];
+let stats = { gen: 0, pub: 0, draft: 0 };
+
+// ─── KEYWORD INPUT ────────────────────────────────────────
+const kwInput = document.getElementById('kw-input');
+const kwWrapper = document.getElementById('kw-wrapper');
+
+kwInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    addKeyword(kwInput.value.trim().replace(/,+$/, ''));
+    kwInput.value = '';
+  } else if (e.key === 'Backspace' && kwInput.value === '' && keywords.length) {
+    keywords.pop();
+    renderKeywords();
+  }
+});
+
+function addKeyword(val) {
+  if (!val || keywords.includes(val)) return;
+  keywords.push(val);
+  renderKeywords();
+  document.getElementById('stat-kw').textContent = keywords.length;
+}
+
+function renderKeywords() {
+  const tags = kwWrapper.querySelectorAll('.kw-tag');
+  tags.forEach(t => t.remove());
+  keywords.forEach((kw, i) => {
+    const tag = document.createElement('span');
+    tag.className = 'kw-tag';
+    tag.innerHTML = `${kw}<button onclick="removeKw(${i})">×</button>`;
+    kwWrapper.insertBefore(tag, kwInput);
+  });
+  document.getElementById('stat-kw').textContent = keywords.length;
+}
+
+function removeKw(i) {
+  keywords.splice(i, 1);
+  renderKeywords();
+}
+
+function clearKeywords() {
+  keywords = [];
+  renderKeywords();
+  document.getElementById('gen-status').innerHTML = '';
+}
+
+// ─── STATUS / ALERT ───────────────────────────────────────
+function setAlert(id, type, html) {
+  const el = document.getElementById(id);
+  if (!html) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="alert alert-${type}"><span>${html}</span></div>`;
+}
+
+// ─── TABS ─────────────────────────────────────────────────
+function switchTab(name) {
+  ['preview','html','meta'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', ['preview','html','meta'][i] === name);
+  });
+}
+
+// ─── TEST CONNECTION ──────────────────────────────────────
+async function testConnection() {
+  const url = getWpUrl();
+  const user = document.getElementById('wp-user').value.trim();
+  const pass = document.getElementById('wp-pass').value.trim();
+  if (!url || !user || !pass) { setAlert('wp-status','warning','Hãy điền đủ URL, username và application password'); return; }
+
+  setAlert('wp-status','info','Đang kiểm tra kết nối...');
+  const icon = document.getElementById('test-icon');
+  icon.textContent = '⏳';
+  try {
+    const resp = await fetch(`${url}/wp-json/wp/v2/users/me`, {
+      headers: { 'Authorization': 'Basic ' + btoa(user + ':' + pass) }
+    });
+    const d = await resp.json();
+    if (resp.ok && d.id) {
+      setAlert('wp-status','success',`Kết nối thành công! Xin chào <strong>${d.name}</strong> (${d.roles?.join(', ')})`);
+      icon.textContent = '✓';
+    } else {
+      setAlert('wp-status','error','Lỗi xác thực: ' + (d.message || 'Sai username hoặc application password'));
+      icon.textContent = '✗';
+    }
+  } catch(e) {
+    setAlert('wp-status','error','Không kết nối được. Kiểm tra URL hoặc bật CORS. Lỗi: ' + e.message);
+    icon.textContent = '✗';
+  }
+}
+
+function getWpUrl() {
+  let u = document.getElementById('wp-url').value.trim().replace(/\/$/, '');
+  if (u && !u.startsWith('http')) u = 'https://' + u;
+  return u;
+}
+
+// ─── GENERATE ARTICLE ─────────────────────────────────────
+async function generateArticle() {
+  const allKws = [...keywords];
+  const typed = kwInput.value.trim();
+  if (typed) { addKeyword(typed); allKws.push(typed); kwInput.value = ''; }
+  if (!allKws.length) { setAlert('gen-status','warning','Hãy nhập ít nhất một từ khóa!'); return; }
+
+  const tone = document.getElementById('tone').value;
+  const length = document.getElementById('length').value;
+  const extra = document.getElementById('extra').value.trim();
+  const wpUrl = getWpUrl();
+  const siteName = wpUrl ? (() => { try { return new URL(wpUrl).hostname; } catch(e) { return wpUrl; } })() : 'website';
+
+  const btn = document.getElementById('btn-generate');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> AI đang viết bài...';
+  document.getElementById('card-preview').style.display = 'none';
+  document.getElementById('link-card').style.display = 'none';
+
+  const progress = document.getElementById('gen-progress');
+  const progressFill = document.getElementById('gen-progress-fill');
+  const stepText = document.getElementById('gen-step-text');
+  progress.style.display = 'block';
+
+  const steps = [
+    [15, 'Phân tích từ khóa và lên outline...'],
+    [35, 'Viết phần mở đầu hấp dẫn...'],
+    [60, 'Triển khai nội dung chính...'],
+    [80, 'Tối ưu SEO và meta description...'],
+    [95, 'Hoàn thiện bài viết...'],
+  ];
+  let si = 0;
+  const progressInterval = setInterval(() => {
+    if (si < steps.length) {
+      progressFill.style.width = steps[si][0] + '%';
+      stepText.textContent = steps[si][1];
+      si++;
+    }
+  }, 900);
+
+  setAlert('gen-status','info','Đang kết nối Claude AI...');
+
+  const prompt = `Bạn là chuyên gia SEO content writer người Việt. Hãy viết bài viết blog chuẩn SEO với thông số:
+
+Từ khóa: ${allKws.join(', ')}
+Website: ${siteName}
+Giọng văn: ${tone}
+Độ dài: ~${length} từ
+${extra ? 'Yêu cầu thêm: ' + extra : ''}
+
+Trả về JSON (chỉ JSON, không thêm bất kỳ text nào khác):
+{
+  "title": "Tiêu đề bài viết hấp dẫn, chứa từ khóa chính, dưới 65 ký tự",
+  "meta_description": "Mô tả meta 150-160 ký tự, có từ khóa, kêu gọi hành động",
+  "focus_keyword": "từ khóa trọng tâm chính",
+  "content_html": "nội dung HTML đầy đủ với: <h2> cho các phần chính, <h3> cho mục con, <p> cho đoạn văn, <ul><li> cho danh sách, <strong> nhấn mạnh. Phải có: đoạn mở hấp dẫn, 4-6 phần nội dung, phần kết luận có CTA rõ ràng",
+  "excerpt": "Tóm tắt 2-3 câu hấp dẫn cho bài viết",
+  "tags_suggest": ["tag1", "tag2", "tag3"]
+}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 5000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '';
+    const clean = raw.replace(/^```json\s*/,'').replace(/\s*```$/,'').trim();
+    const art = JSON.parse(clean);
+
+    currentArticle = {
+      title: art.title || '',
+      contentHtml: art.content_html || '',
+      excerpt: art.excerpt || '',
+      meta: art.meta_description || '',
+      keyword: art.focus_keyword || allKws[0],
+      tagsSuggest: art.tags_suggest || [],
+    };
+
+    const tmp = document.createElement('div');
+    tmp.innerHTML = currentArticle.contentHtml;
+    const wordCount = tmp.textContent.split(/\s+/).filter(Boolean).length;
+
+    // Populate preview
+    document.getElementById('article-preview').innerHTML =
+      `<h1 style="font-size:16px;font-weight:700;margin-bottom:12px;color:var(--text);">${currentArticle.title}</h1>` +
+      currentArticle.contentHtml;
+    document.getElementById('article-html').textContent = currentArticle.contentHtml;
+    document.getElementById('meta-content').innerHTML = `
+      <div class="meta-field"><div class="meta-key">Tiêu đề SEO</div><div class="meta-val">${currentArticle.title}</div></div>
+      <div class="meta-field"><div class="meta-key">Meta Description (${currentArticle.meta.length} ký tự)</div><div class="meta-val">${currentArticle.meta}</div></div>
+      <div class="meta-field"><div class="meta-key">Từ khóa trọng tâm</div><div class="meta-val" style="color:var(--accent);">${currentArticle.keyword}</div></div>
+      <div class="meta-field"><div class="meta-key">Excerpt</div><div class="meta-val">${currentArticle.excerpt}</div></div>
+      <div class="meta-field"><div class="meta-key">Tags gợi ý</div><div class="meta-val">${currentArticle.tagsSuggest.map(t=>`<span class="badge badge-blue" style="margin-right:4px;">${t}</span>`).join('')}</div></div>
+    `;
+
+    document.getElementById('preview-kw-label').textContent = allKws.join(', ');
+    document.getElementById('word-count').textContent = wordCount + ' từ';
+    document.getElementById('card-preview').style.display = 'block';
+
+    stats.gen++;
+    document.getElementById('stat-gen').textContent = stats.gen;
+    setAlert('gen-status', 'success', `Bài viết đã tạo xong! ${wordCount} từ · Cuộn xuống để đăng lên WordPress`);
+
+    clearInterval(progressInterval);
+    progressFill.style.width = '100%';
+    setTimeout(() => { progress.style.display = 'none'; }, 500);
+
+    document.getElementById('card-preview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    markStep(4);
+
+  } catch(err) {
+    clearInterval(progressInterval);
+    progress.style.display = 'none';
+    setAlert('gen-status','error','Lỗi: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✦ Tạo bài viết với AI';
+  }
+}
+
+// ─── PUBLISH ──────────────────────────────────────────────
+async function publishArticle() {
+  const wpUrl = getWpUrl();
+  const user = document.getElementById('wp-user').value.trim();
+  const pass = document.getElementById('wp-pass').value.trim();
+  const postStatus = document.getElementById('post-status').value;
+  const catRaw = document.getElementById('category').value.trim();
+  const tagRaw = document.getElementById('tags').value.trim();
+
+  if (!wpUrl || !user || !pass) {
+    setAlert('publish-status','warning','Hãy điền đầy đủ thông tin WordPress (URL, username, application password)');
+    return;
+  }
+  if (!currentArticle.title) {
+    setAlert('publish-status','warning','Chưa có bài viết. Hãy tạo bài trước!');
+    return;
+  }
+
+  const btn = document.getElementById('btn-publish');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Đang đăng lên WordPress...';
+  setAlert('publish-status','info','Đang kết nối WordPress REST API...');
+
+  const body = {
+    title: currentArticle.title,
+    content: currentArticle.contentHtml,
+    excerpt: currentArticle.excerpt,
+    status: postStatus,
+  };
+
+  if (catRaw) body.categories = catRaw.split(',').map(c => parseInt(c.trim())).filter(Boolean);
+  if (tagRaw) body.tags = tagRaw.split(',').map(t => parseInt(t.trim())).filter(Boolean);
+
+  try {
+    const resp = await fetch(`${wpUrl}/wp-json/wp/v2/posts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Basic ' + btoa(user + ':' + pass),
+      },
+      body: JSON.stringify(body),
+    });
+
+    const result = await resp.json();
+
+    if (resp.ok && result.id) {
+      const postLink = result.link || `${wpUrl}/?p=${result.id}`;
+      const editLink = `${wpUrl}/wp-admin/post.php?post=${result.id}&action=edit`;
+      const label = postStatus === 'publish' ? 'Xuất bản' : 'Nháp';
+
+      // Hiện link card nổi bật
+      const linkCard = document.getElementById('link-card');
+      linkCard.style.display = 'block';
+      document.getElementById('post-link-display').href = postLink;
+      document.getElementById('post-link-display').textContent = postLink;
+      document.getElementById('open-link-btn').href = postLink;
+      document.getElementById('wp-edit-btn').href = editLink;
+      document.getElementById('link-status-badge').textContent = label;
+      document.getElementById('link-status-badge').className = 'badge ' + (label === 'Xuất bản' ? 'badge-green' : 'badge-amber');
+      linkCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      setAlert('publish-status','','');
+
+      if (postStatus === 'publish') stats.pub++; else stats.draft++;
+      document.getElementById('stat-pub').textContent = stats.pub;
+      document.getElementById('stat-draft').textContent = stats.draft;
+
+      historyItems.unshift({
+        title: currentArticle.title,
+        id: result.id,
+        url: postLink,
+        label,
+        time: new Date().toLocaleTimeString('vi-VN'),
+      });
+      renderHistory();
+    } else {
+      setAlert('publish-status','error','Lỗi: ' + (result.message || JSON.stringify(result)));
+    }
+  } catch(e) {
+    setAlert('publish-status','error','Lỗi kết nối: ' + e.message + '. Kiểm tra CORS plugin hoặc application password.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🚀 Đăng lên WordPress';
+  }
+}
+
+// ─── HISTORY ──────────────────────────────────────────────
+function renderHistory() {
+  const sec = document.getElementById('card-history');
+  const list = document.getElementById('history-list');
+  const count = document.getElementById('history-count');
+  const hdrCount = document.getElementById('hdr-count');
+  const hdrNum = document.getElementById('hdr-num');
+
+  if (!historyItems.length) { sec.style.display = 'none'; return; }
+
+  sec.style.display = 'block';
+  count.textContent = historyItems.length;
+  hdrCount.style.display = 'block';
+  hdrNum.textContent = historyItems.length;
+
+  list.innerHTML = historyItems.map(h => `
+    <div class="history-item">
+      <div style="min-width:0;">
+        <div class="hi-title" title="${h.title}">${h.title}</div>
+        <div class="hi-meta">ID ${h.id} · ${h.time}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+        <span class="badge ${h.label==='Xuất bản'?'badge-green':'badge-amber'}">${h.label}</span>
+        <a href="${h.url}" target="_blank" class="btn btn-sm btn-outline" style="padding:4px 10px;font-size:11px;">Xem →</a>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── HELPERS ──────────────────────────────────────────────
+function copyLink() {
+  const link = document.getElementById('post-link-display').textContent;
+  navigator.clipboard.writeText(link);
+  const btn = document.getElementById('copy-link-btn');
+  btn.textContent = '✓ Đã copy!';
+  setTimeout(() => btn.textContent = 'Copy link', 1500);
+}
+
+function copyContent() {
+  navigator.clipboard.writeText(currentArticle.contentHtml || '');
+  const btn = event.target;
+  btn.textContent = '✓ Đã copy!';
+  setTimeout(() => btn.textContent = '📋 Copy HTML', 1500);
+}
+
+function markStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('nav-' + i);
+    el.classList.remove('active','done');
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+  }
+}
+
+// auto-mark steps on scroll
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.id;
+      if (id === 'card-wp') markStep(1);
+      else if (id === 'card-settings') markStep(2);
+      else if (id === 'card-kw') markStep(3);
+      else if (id === 'card-preview') markStep(4);
+    }
+  });
+}, { threshold: 0.3 });
+['card-wp','card-settings','card-kw','card-preview'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) observer.observe(el);
+});
+</script>
+</body>
+</html>
