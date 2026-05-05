@@ -575,6 +575,35 @@
   <!-- MAIN CONTENT -->
   <main class="main">
 
+    <!-- CARD 0: Anthropic API Key -->
+    <div class="card" id="card-apikey">
+      <div class="card-header">
+        <div class="card-icon">🤖</div>
+        <div>
+          <div class="card-title">Anthropic API Key</div>
+          <div class="card-subtitle">Cần có để AI viết bài — lấy miễn phí tại console.anthropic.com</div>
+        </div>
+        <div style="margin-left:auto;">
+          <a href="https://console.anthropic.com/settings/keys" target="_blank" class="btn btn-sm btn-blue">Lấy API Key →</a>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label>API Key <span class="hint">bắt đầu bằng sk-ant-...</span></label>
+          <div style="display:flex;gap:8px;">
+            <input type="password" id="anthropic-key" placeholder="sk-ant-api03-..." style="flex:1;" />
+            <button class="btn btn-sm" onclick="toggleKeyVisibility()" id="toggle-key-btn">Hiện</button>
+          </div>
+        </div>
+        <div style="padding:10px 12px; background:var(--accent-dim2); border:1px solid rgba(34,217,122,0.1); border-radius:var(--radius); font-size:12px; color:var(--text2); line-height:1.7;">
+          <strong style="color:var(--accent);">Cách lấy API Key miễn phí:</strong><br>
+          1. Vào <strong style="color:var(--text);">console.anthropic.com</strong> → đăng ký tài khoản<br>
+          2. Vào <strong style="color:var(--text);">Settings → API Keys → Create Key</strong><br>
+          3. Copy key → dán vào ô trên · Key chỉ lưu trong trình duyệt, không gửi đi đâu khác
+        </div>
+      </div>
+    </div>
+
     <!-- CARD 1: WordPress Config -->
     <div class="card" id="card-wp">
       <div class="card-header">
@@ -850,6 +879,21 @@ function switchTab(name) {
   });
 }
 
+// ─── API KEY HELPERS ──────────────────────────────────────
+function toggleKeyVisibility() {
+  const inp = document.getElementById('anthropic-key');
+  const btn = document.getElementById('toggle-key-btn');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'Ẩn'; }
+  else { inp.type = 'password'; btn.textContent = 'Hiện'; }
+}
+
+// Lưu & khôi phục API key
+const savedKey = localStorage.getItem('anthropic_api_key');
+if (savedKey) document.getElementById('anthropic-key').value = savedKey;
+document.getElementById('anthropic-key').addEventListener('change', () => {
+  localStorage.setItem('anthropic_api_key', document.getElementById('anthropic-key').value.trim());
+});
+
 // ─── SAFE JSON PARSE (bỏ qua PHP Notice/Warning in ra trước JSON) ────
 async function safeJson(resp) {
   const text = await resp.text();
@@ -953,9 +997,22 @@ Trả về JSON (chỉ JSON, không thêm bất kỳ text nào khác):
 }`;
 
   try {
+    const apiKey = document.getElementById('anthropic-key').value.trim();
+    if (!apiKey) {
+      clearInterval(progressInterval);
+      progress.style.display = 'none';
+      btn.disabled = false; btn.innerHTML = '✦ Tạo bài viết với AI';
+      setAlert('gen-status','warning','⚠ Hãy nhập Anthropic API Key ở mục đầu tiên. Lấy miễn phí tại console.anthropic.com');
+      return;
+    }
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 5000,
