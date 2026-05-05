@@ -575,31 +575,31 @@
   <!-- MAIN CONTENT -->
   <main class="main">
 
-    <!-- CARD 0: Anthropic API Key -->
+    <!-- CARD 0: Gemini API Key -->
     <div class="card" id="card-apikey">
       <div class="card-header">
-        <div class="card-icon">🤖</div>
+        <div class="card-icon">♊</div>
         <div>
-          <div class="card-title">Anthropic API Key</div>
-          <div class="card-subtitle">Cần có để AI viết bài — lấy miễn phí tại console.anthropic.com</div>
+          <div class="card-title">Google Gemini API Key</div>
+          <div class="card-subtitle">Miễn phí hoàn toàn — lấy tại aistudio.google.com</div>
         </div>
         <div style="margin-left:auto;">
-          <a href="https://console.anthropic.com/settings/keys" target="_blank" class="btn btn-sm btn-blue">Lấy API Key →</a>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn btn-sm btn-blue">Lấy API Key miễn phí →</a>
         </div>
       </div>
       <div class="card-body">
         <div class="field">
-          <label>API Key <span class="hint">bắt đầu bằng sk-ant-...</span></label>
+          <label>Gemini API Key <span class="hint">bắt đầu bằng AIza...</span></label>
           <div style="display:flex;gap:8px;">
-            <input type="password" id="anthropic-key" placeholder="sk-ant-api03-..." style="flex:1;" />
+            <input type="password" id="anthropic-key" placeholder="AIzaSy..." style="flex:1;" />
             <button class="btn btn-sm" onclick="toggleKeyVisibility()" id="toggle-key-btn">Hiện</button>
           </div>
         </div>
         <div style="padding:10px 12px; background:var(--accent-dim2); border:1px solid rgba(34,217,122,0.1); border-radius:var(--radius); font-size:12px; color:var(--text2); line-height:1.7;">
-          <strong style="color:var(--accent);">Cách lấy API Key miễn phí:</strong><br>
-          1. Vào <strong style="color:var(--text);">console.anthropic.com</strong> → đăng ký tài khoản<br>
-          2. Vào <strong style="color:var(--text);">Settings → API Keys → Create Key</strong><br>
-          3. Copy key → dán vào ô trên · Key chỉ lưu trong trình duyệt, không gửi đi đâu khác
+          <strong style="color:var(--accent);">Cách lấy API Key miễn phí (30 giây):</strong><br>
+          1. Vào <strong style="color:var(--text);">aistudio.google.com</strong> → đăng nhập bằng Google<br>
+          2. Nhấn <strong style="color:var(--text);">Get API Key → Create API Key</strong><br>
+          3. Copy key → dán vào ô trên · Miễn phí 1500 request/ngày · Key lưu trong trình duyệt
         </div>
       </div>
     </div>
@@ -888,10 +888,10 @@ function toggleKeyVisibility() {
 }
 
 // Lưu & khôi phục API key
-const savedKey = localStorage.getItem('anthropic_api_key');
+const savedKey = localStorage.getItem('gemini_api_key');
 if (savedKey) document.getElementById('anthropic-key').value = savedKey;
 document.getElementById('anthropic-key').addEventListener('change', () => {
-  localStorage.setItem('anthropic_api_key', document.getElementById('anthropic-key').value.trim());
+  localStorage.setItem('gemini_api_key', document.getElementById('anthropic-key').value.trim());
 });
 
 // ─── SAFE JSON PARSE (bỏ qua PHP Notice/Warning in ra trước JSON) ────
@@ -1002,45 +1002,41 @@ Trả về JSON (chỉ JSON, không thêm bất kỳ text nào khác):
       clearInterval(progressInterval);
       progress.style.display = 'none';
       btn.disabled = false; btn.innerHTML = '✦ Tạo bài viết với AI';
-      setAlert('gen-status','warning','⚠ Hãy nhập Anthropic API Key ở mục đầu tiên. Lấy miễn phí tại console.anthropic.com');
+      setAlert('gen-status','warning','⚠ Hãy nhập Gemini API Key ở mục đầu tiên. Lấy miễn phí tại aistudio.google.com');
       return;
     }
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 5000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
+
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.8, maxOutputTokens: 8192 }
+        })
+      }
+    );
 
     const rawText = await resp.text();
 
     if (!resp.ok) {
-      let errMsg = `HTTP ${resp.status}`;
+      let errMsg = `Lỗi HTTP ${resp.status}`;
       try {
         const errJson = JSON.parse(rawText);
-        if (errJson.error?.message) errMsg = errJson.error.message;
-        else if (errJson.message) errMsg = errJson.message;
+        errMsg = errJson.error?.message || errMsg;
       } catch(e) {}
-      if (resp.status === 401) errMsg = 'API Key không hợp lệ hoặc hết hạn. Vui lòng kiểm tra lại tại console.anthropic.com';
-      if (resp.status === 429) errMsg = 'Vượt giới hạn request. Vui lòng đợi 1 phút rồi thử lại.';
-      if (resp.status === 400) errMsg = 'Yêu cầu không hợp lệ: ' + rawText.slice(0, 200);
+      if (resp.status === 400) errMsg = 'API Key không hợp lệ. Kiểm tra lại tại aistudio.google.com';
+      if (resp.status === 429) errMsg = 'Vượt giới hạn request. Đợi 1 phút rồi thử lại.';
       throw new Error(errMsg);
     }
 
     const data = JSON.parse(rawText);
-    const raw = data.content?.[0]?.text || '';
-    if (!raw) throw new Error('AI không trả về nội dung. Thử lại lần nữa.');
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!raw) throw new Error('Gemini không trả về nội dung. Thử lại lần nữa.');
     const jsonStart = raw.indexOf('{');
     const jsonEnd = raw.lastIndexOf('}');
-    if (jsonStart === -1 || jsonEnd === -1) throw new Error('AI trả về nội dung không đúng định dạng. Thử nhấn Tạo lại.');
+    if (jsonStart === -1 || jsonEnd === -1) throw new Error('AI trả về nội dung không đúng định dạng. Nhấn Tạo lại.');
     const clean = raw.slice(jsonStart, jsonEnd + 1);
     const art = JSON.parse(clean);
 
