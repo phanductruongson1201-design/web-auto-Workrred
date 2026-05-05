@@ -850,6 +850,14 @@ function switchTab(name) {
   });
 }
 
+// ─── SAFE JSON PARSE (bỏ qua PHP Notice/Warning in ra trước JSON) ────
+async function safeJson(resp) {
+  const text = await resp.text();
+  const idx = text.indexOf('{');
+  if (idx === -1) throw new Error('Không nhận được JSON hợp lệ từ server');
+  return JSON.parse(text.slice(idx));
+}
+
 // ─── TEST CONNECTION ──────────────────────────────────────
 async function testConnection() {
   const url = getWpUrl();
@@ -864,7 +872,7 @@ async function testConnection() {
     const resp = await fetch(`${url}/wp-json/wp/v2/users/me`, {
       headers: { 'Authorization': 'Basic ' + btoa(user + ':' + pass) }
     });
-    const d = await resp.json();
+    const d = await safeJson(resp);
     if (resp.ok && d.id) {
       setAlert('wp-status','success',`Kết nối thành công! Xin chào <strong>${d.name}</strong> (${d.roles?.join(', ')})`);
       icon.textContent = '✓';
@@ -1053,7 +1061,7 @@ async function publishArticle() {
       body: JSON.stringify(body),
     });
 
-    const result = await resp.json();
+    const result = await safeJson(resp);
 
     if (resp.ok && result.id) {
       const postLink = result.link || `${wpUrl}/?p=${result.id}`;
